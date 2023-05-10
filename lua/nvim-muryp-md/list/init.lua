@@ -19,6 +19,30 @@ end
 local function is_list_item(line)
   return string.match(line, "^%s*[%-%*%+]?%s*[0-9]*%.?%s+.*$")
 end
+local function isListEmpty(line)
+  local delete_point = string.gsub(line, "^%s*[-*+]%s+", '', 1)
+  local delete_checkbox = string.gsub(delete_point, "^%[.%] ", '', 1)
+  local delete_number = string.gsub(delete_checkbox, "^%s*%d+%.%s+", '', 2)
+  if delete_number == '' then
+    return true
+  end
+  return false
+end
+
+local function cekLevel()
+  -- mengambil pengaturan shiftwidth dan tabstop pada buffer saat ini
+  local shiftwidth = vim.api.nvim_buf_get_option(0, "shiftwidth")
+  -- local tabstop = vim.api.nvim_buf_get_option(0, "tabstop")
+  -- menghitung jumlah spasi pada indentasi
+  local indent_spaces = vim.fn.indent(".")
+  -- memeriksa apakah expandtab diaktifkan
+  local expandtab = vim.bo.expandtab
+  -- mengatur jumlah spasi yang digunakan
+  local spaces = expandtab and shiftwidth or 1
+  -- menghitung level indentasi
+  local level = math.floor(indent_spaces / spaces)
+  return level
+end
 
 M.next_bullet = function()
   local line = vim.api.nvim_get_current_line()
@@ -32,10 +56,17 @@ M.next_bullet = function()
     if isCeklist(line) then
       ceckbox = ' [ ]'
     end
-    vim.api.nvim_feedkeys('\n' .. next_bullet .. ceckbox .. " ", "n", true)
-  else
-    vim.api.nvim_feedkeys("\n", "n", true)
+    if isListEmpty(line) then
+      if cekLevel() == 0 then
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>A<C-u>", true, false, true), "n", true)
+        return
+      end
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc><<a", true, false, true), "n", true)
+      return
+    end
+    return vim.api.nvim_feedkeys('\n' .. next_bullet .. ceckbox .. " ", "n", true)
   end
+  return vim.api.nvim_feedkeys("\n", "n", true)
 end
 
 
