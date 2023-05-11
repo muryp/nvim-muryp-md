@@ -48,11 +48,7 @@ M.next_bullet = function()
   local line = vim.api.nvim_get_current_line()
   local ceckbox = ''
   if is_list_item(line) then
-    -- local indent = string.match(line, "^%s*")
     local bullet = string.match(line, "^%s*([%-%*%+]?%s*[0-9]*%.?)%s+.*$")
-    local next_bullet = bullet:gsub("%d*", function(num)
-      return tonumber(num) and tostring(tonumber(num) + 1) or ""
-    end)
     if isCeklist(line) then
       ceckbox = ' [ ]'
     end
@@ -64,6 +60,19 @@ M.next_bullet = function()
       vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc><<a", true, false, true), "n", true)
       return
     end
+    --- cek is have colon
+    if string.match(line, '^.*:') then
+      local backTofirstBullet = bullet:gsub("%d*", function(num)
+        return tonumber(num) and tostring(1) or ""
+      end)
+      vim.api.nvim_feedkeys('\n' .. backTofirstBullet .. ceckbox .. " ", "n", true)
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>>>A", true, false, true), "n", true)
+      return
+    end
+    local next_bullet = bullet:gsub("%d*", function(num)
+      return tonumber(num) and tostring(tonumber(num) + 1) or ""
+    end)
+    --- create emty list/point
     return vim.api.nvim_feedkeys('\n' .. next_bullet .. ceckbox .. " ", "n", true)
   end
   return vim.api.nvim_feedkeys("\n", "n", true)
