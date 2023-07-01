@@ -19,17 +19,18 @@ return function(PARENT_NUM, isTobeCheck)
     local isUnChecked           = string.match(CONTENT_ABOVE, '^%s*%- %[[ ]%].*$') ---@type string | nil
     local isCheckbox            = isChecked or isUnChecked
     local isNotBlank            = CONTENT_ABOVE ~= ''
-    local isAction              = isTobeCheck and not isChecked or not isTobeCheck and isChecked
+    --- this cecking for expect tobe check or uncheck but got diferent
+    local isNotExpect              = isTobeCheck and isUnChecked or not isTobeCheck and isChecked
     if isNotBlank and not isCheckbox or not isTobeCheck and isNextParent and isUnChecked then
       return false
     end
     if isNotBlank then
-      if isNextParent and isAction then
+      if isNextParent and isNotExpect then
         local NEW_CONTENT = checked(CONTENT_ABOVE)
         vim.api.nvim_buf_set_lines(0, ABOVE_LINE_NUM - 1, ABOVE_LINE_NUM, true, { NEW_CONTENT })
         return ABOVE_LINE_NUM
       end
-      if isNextSiblingChildern and isAction and isTobeCheck or #INDENT_ABOVE_CHAR < 1 then
+      if isNextSiblingChildern and isNotExpect and isTobeCheck or #INDENT_ABOVE_CHAR < 1 then
         return false
       end
     end

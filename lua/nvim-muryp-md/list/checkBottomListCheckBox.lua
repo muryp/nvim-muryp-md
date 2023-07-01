@@ -2,27 +2,6 @@ local chekTopListCheckbox = require('nvim-muryp-md.list.chekTopListCheckbox')
 local checked = require('nvim-muryp-md.list.checked')
 local M = {}
 
----@param NEXT_CHEK integer
----@param args {CURRENT_LINE_NUM:number,PARENT_LINE:number,isTobeCheck:boolean,LAST_CONTENT:boolean}
----@param STORE { INDENT_CHAR: string, INDENT_SIZE: number, LAST_CONTENT: boolean, LAST_NUM: number, PARENT_CONTEN: string, TOTAL_LINES: number, childernCheck: boolean, isParentTobeToggle: boolean }
-local function cekAbove(NEXT_CHEK, args, STORE)
-  local ABOVE_PARENT_NUM      = NEXT_CHEK - 1
-  local PARENT_NEXT_CONTENT   = vim.api.nvim_buf_get_lines(0, ABOVE_PARENT_NUM - 1, ABOVE_PARENT_NUM, true)[1]
-  local PARENT_NEXT_INDENT    = string.match(PARENT_NEXT_CONTENT, '^([ \t]*)')
-  local PARENT_CONTENT        = vim.api.nvim_buf_get_lines(0, NEXT_CHEK - 1, NEXT_CHEK, true)[1]
-  local PARENT_INDENT         = string.match(PARENT_CONTENT, '^([ \t]*)')
-
-  ---redefind args
-  args.CURRENT_LINE_NUM       = STORE.LAST_NUM
-  args.PARENT_LINE            = NEXT_CHEK
-  args.LAST_CONTENT           = STORE.LAST_CONTENT
-
-  local isHaveParentOrSibling = #PARENT_NEXT_INDENT <= #PARENT_INDENT
-  if isHaveParentOrSibling then
-    M.cekBottomChekbox(args)
-  end
-end
-
 ---this function chekcing bottom cheklist on childern and sibling, and if have childern will be toggle check
 ---@param args {CURRENT_LINE_NUM:number,PARENT_LINE:number,isTobeCheck:boolean,LAST_CONTENT:boolean}
 function M.cekBottomChekbox(args)
@@ -37,16 +16,17 @@ function M.cekBottomChekbox(args)
   --is have more childern on bottom to be check
   if not STORE.LAST_CONTENT then
     -- store
-    STORE.PARENT_CONTEN = vim.api.nvim_buf_get_lines(0, PARENT_LINE - 1, PARENT_LINE, true)[1] ---@type string
-    STORE.INDENT_CHAR   = string.match(STORE.PARENT_CONTEN, '^([ \t]*)') ---@type string
-    STORE.INDENT_SIZE   = #STORE.INDENT_CHAR ---@type number
-    STORE.TOTAL_LINES   = vim.api.nvim_buf_line_count(0) ---@type number
-    STORE.LAST_NUM      = CURRENT_LINE_NUM ---@type number
-    STORE.childernCheck = true ---@type boolean
+    STORE.PARENT_CONTEN     = vim.api.nvim_buf_get_lines(0, PARENT_LINE - 1, PARENT_LINE, true)[1] ---@type string
+    STORE.INDENT_CHAR       = string.match(STORE.PARENT_CONTEN, '^([ \t]*)') ---@type string
+    STORE.INDENT_SIZE       = #STORE.INDENT_CHAR ---@type number
+    STORE.TOTAL_LINES       = vim.api.nvim_buf_line_count(0) ---@type number
+    STORE.LAST_NUM          = CURRENT_LINE_NUM ---@type number
+    STORE.childernCheck     = true ---@type boolean
 
     --- if tobe check but current line is unceck stop it
-    local BOTTOM_CONTEN = vim.api.nvim_buf_get_lines(0, CURRENT_LINE_NUM - 1, CURRENT_LINE_NUM, true)[1] ---@type string
-    local isUnCheckedBottom   = string.match(BOTTOM_CONTEN, '^%s*%- %[[ ]%].*$')
+    local BOTTOM_CONTEN     = vim.api.nvim_buf_get_lines(0, CURRENT_LINE_NUM - 1, CURRENT_LINE_NUM, true)
+        [1] ---@type string
+    local isUnCheckedBottom = string.match(BOTTOM_CONTEN, '^%s*%- %[[ ]%].*$')
     if isTobeCheck and isUnCheckedBottom then
       return
     end
@@ -109,9 +89,24 @@ function M.cekBottomChekbox(args)
   if not STORE.isParentTobeToggle then
     return
   end
-  local NEXT_CHEK = chekTopListCheckbox(PARENT_LINE, isTobeCheck)
-  if NEXT_CHEK then
-    cekAbove(NEXT_CHEK, args, STORE)
+  local isParentTrue = chekTopListCheckbox(PARENT_LINE, isTobeCheck)
+  --- if parent is ok
+  if isParentTrue then
+    local ABOVE_PARENT_NUM    = isParentTrue - 1
+    local PARENT_NEXT_CONTENT = vim.api.nvim_buf_get_lines(0, ABOVE_PARENT_NUM - 1, ABOVE_PARENT_NUM, true)[1]
+    local PARENT_NEXT_INDENT  = string.match(PARENT_NEXT_CONTENT, '^([ \t]*)')
+    local PARENT_CONTENT      = vim.api.nvim_buf_get_lines(0, isParentTrue - 1, isParentTrue, true)[1]
+    local PARENT_INDENT       = string.match(PARENT_CONTENT, '^([ \t]*)')
+
+    ---redefind args
+    args.CURRENT_LINE_NUM     = STORE.LAST_NUM
+    args.PARENT_LINE          = isParentTrue
+    args.LAST_CONTENT         = STORE.LAST_CONTENT
+
+    local isParentOrSibling   = #PARENT_NEXT_INDENT <= #PARENT_INDENT
+    if isParentOrSibling then
+      M.cekBottomChekbox(args)
+    end
   end
 end
 

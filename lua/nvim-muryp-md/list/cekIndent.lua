@@ -1,6 +1,6 @@
 return function(CONTEN_LINE)
-  local shiftwidth = vim.api.nvim_buf_get_option(0, 'shiftwidth')
-  local softtabstop = vim.api.nvim_buf_get_option(0, 'softtabstop') / 2
+  local shiftwidth = vim.api.nvim_buf_get_option(0, 'shiftwidth') ---@type number
+  local softtabstop = vim.api.nvim_buf_get_option(0, 'softtabstop') / 2 ---@type number
   if CONTEN_LINE == nil then
     CONTEN_LINE = vim.api.nvim_get_current_line()
   end
