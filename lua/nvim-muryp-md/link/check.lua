@@ -24,7 +24,8 @@ local function get_column_of_last_closing_parenthesis()
   return false
 end
 
-local function cek()
+---@return {isLink?:true,isLInkMd?:true,text?:string,from?:number,into?: number} | nil
+local function cekLink()
   local current_line = vim.api.nvim_get_current_line()
   local current_col = vim.fn.col('.')
   local TEXT_UNDER_CURSOR = current_line:sub(current_col, current_col)
@@ -35,7 +36,7 @@ local function cek()
   local isLinkRaw = string.match(current_word, REGEX_RAW_LINK) ---@type string | nil strin will return raw link select
   local notInSpace = not string.match(TEXT_UNDER_CURSOR, "^[%s\t]")
   if isLinkRaw and notInSpace then
-    return true
+    return { isLink = true, text = current_word }
   end
   local isHaveBraket = get_column_of_first_opening_bracket()
   local isHaveparenthesis = get_column_of_last_closing_parenthesis()
@@ -46,12 +47,11 @@ local function cek()
   local REGEX_LINK_MD = "%[[^%]]+%]%([^%)]+%)"
   local isMatch = string.match(GET_LINK, REGEX_LINK_MD) ---@type string | nil the string will return link md
   if isMatch then
-    return true
+    return { isLink = true, isLInkMd = true, text = isMatch, from = isHaveBraket, into = isHaveparenthesis }
   end
   if notInSpace then
-    return current_word
+    return { text = current_word }
   end
-  return false
 end
 
-return cek
+return cekLink
