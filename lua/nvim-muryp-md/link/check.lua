@@ -1,57 +1,63 @@
-local function get_column_of_first_opening_bracket()
-  local line_content = vim.api.nvim_get_current_line()
-  local current_cursor = vim.fn.col('.') ---@type number
-  while current_cursor > 0 do
-    local char = line_content:sub(current_cursor, current_cursor)
-    if char == '[' then
-      return current_cursor
-    end
-    current_cursor = current_cursor - 1
-  end
-  return false
-end
-local function get_column_of_last_closing_parenthesis()
-  local line_content = vim.api.nvim_get_current_line()
-  local current_cursor = vim.fn.col('.')
-  local line_length = #line_content
-  while current_cursor <= line_length do
-    local char = line_content:sub(current_cursor, current_cursor)
-    if char == ')' then
-      return current_cursor
-    end
-    current_cursor = current_cursor + 1
-  end
-  return false
-end
-
----@return {isLink?:true,isLInkMd?:true,text?:string,from?:number,into?: number} | nil
-local function cekLink()
-  local current_line = vim.api.nvim_get_current_line()
-  local current_col = vim.fn.col('.')
-  local TEXT_UNDER_CURSOR = current_line:sub(current_col, current_col)
-  -- Ambil teks saat ini dari posisi awal kata hingga kursor
+local isRawLink = function()
   local current_word = vim.fn.expand('<cWORD>') ---@type string
-  -- Cek apakah teks di bawah kursor adalah tautan
   local REGEX_RAW_LINK = "^https?://[%w-_%.%?%.:/%+=&]+"
   local isLinkRaw = string.match(current_word, REGEX_RAW_LINK) ---@type string | nil strin will return raw link select
-  local notInSpace = not string.match(TEXT_UNDER_CURSOR, "^[%s\t]")
-  if isLinkRaw and notInSpace then
-    return { isLink = true, text = current_word }
+  if isLinkRaw then
+    return { url = isLinkRaw }
   end
-  local isHaveBraket = get_column_of_first_opening_bracket()
-  local isHaveparenthesis = get_column_of_last_closing_parenthesis()
-  local GET_LINK = ''
-  if isHaveBraket and isHaveparenthesis then
-    GET_LINK = current_line:sub(isHaveBraket, isHaveparenthesis)
-  end
-  local REGEX_LINK_MD = "%[[^%]]+%]%([^%)]+%)"
-  local isMatch = string.match(GET_LINK, REGEX_LINK_MD) ---@type string | nil the string will return link md
-  if isMatch then
-    return { isLink = true, isLInkMd = true, text = isMatch, from = isHaveBraket, into = isHaveparenthesis }
-  end
-  if notInSpace then
-    return { text = current_word }
-  end
+  return false
 end
 
-return cekLink
+---@param CONTENT_LINE string
+---@param CURRENT_COL number
+---@param REGEX string
+local cekLinkMdWiki = function(CONTENT_LINE, CURRENT_COL, REGEX)
+  local startCol, endCol = CONTENT_LINE:find(REGEX)
+  local LIST_LINK_NUM = {} ---@type {startCol:integer, endCol:integer}[]
+  while startCol do
+    local tabel = { startCol = startCol, endCol = endCol }
+    if tabel ~= nil then
+      table.insert(LIST_LINK_NUM, tabel)
+    end
+    startCol, endCol = CONTENT_LINE:find(REGEX, endCol + 1)
+  end
+  if next(LIST_LINK_NUM) ~= nil then
+    for _, VAL in pairs(LIST_LINK_NUM) do
+      if VAL.startCol <= CURRENT_COL and VAL.endCol >= CURRENT_COL then
+        local CONTENT_RESULT = CONTENT_LINE:sub(VAL.startCol, VAL.endCol)
+        return { CONTENT = CONTENT_RESULT, COL = VAL }
+      end
+    end
+  end
+end
+local isLinkMdWiki = function()
+  local CURRENT_COL = vim.fn.col('.') ---@type number
+  local LINE_CONTENT = vim.api.nvim_get_current_line() ---@type string - get text on current line
+  local REGEX_MD = "%[(.-)%]%((.-)%)"
+  local LINK_MD = cekLinkMdWiki(LINE_CONTENT, CURRENT_COL, REGEX_MD)
+  if LINK_MD then
+    local text, url = LINK_MD.CONTENT:match(REGEX_MD)
+    return { text = text, url = url, isMdWiki = true, COL = LINK_MD.COL }
+  end
+  local REGEX_WIKI = "%[%[(.-)%]%]"
+  local LINK_WIKI = cekLinkMdWiki(LINE_CONTENT, CURRENT_COL, REGEX_WIKI)
+  if LINK_WIKI then
+    local LINK_TEXT_WIKI = LINK_WIKI:match("%[%[(.-)%]%]")
+    return { text = LINK_TEXT_WIKI, url = LINK_TEXT_WIKI, isMdWiki = true, COL = LINK_MD.COL }
+  end
+  return false
+end
+
+local isLink = function()
+  local MD_LINK = isLinkMdWiki()
+  if MD_LINK then
+    return MD_LINK
+  end
+  local RAW_LINK = isRawLink()
+  if RAW_LINK then
+    return RAW_LINK
+  end
+  return false
+end
+
+return isLink
