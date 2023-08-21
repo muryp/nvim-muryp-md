@@ -9,17 +9,17 @@ local isRawLink = function()
   return false
 end
 
-local REGEX_MD = "%[(.-)%]%((.-)%)"
-local REGEX_WIKI = "%[%[(.-)%]%]"
+M.REGEX_MD = "%[(.-)%]%((.-)%)"
+M.REGEX_WIKI = "%[%[(.-)%]%]"
 ---get list link md/wiki
 ---@param CONTENT_LINE string
 ---@param TYPE 'md'|'wiki'
 M.listLinkNum = function(CONTENT_LINE, TYPE)
   local REGEX ---@type string - regex
   if TYPE == 'md' then
-    REGEX = REGEX_MD
+    REGEX = M.REGEX_MD
   else
-    REGEX = REGEX_WIKI
+    REGEX = M.REGEX_WIKI
   end
   local startCol, endCol = CONTENT_LINE:find(REGEX)
   local LIST_LINK_NUM = {} ---@type {startCol:integer, endCol:integer}[]
@@ -52,12 +52,12 @@ local isLinkMdWiki = function()
   local LINE_CONTENT = vim.api.nvim_get_current_line() ---@type string - get text on current line
   local LINK_MD = cekLinkMdWiki(LINE_CONTENT, CURRENT_COL, 'md')
   if LINK_MD then
-    local text, url = LINK_MD.CONTENT:match(REGEX_MD)
+    local text, url = LINK_MD.CONTENT:match(M.REGEX_MD)
     return { text = text, url = url, isMdWiki = true, COL = LINK_MD.COL }
   end
   local LINK_WIKI = cekLinkMdWiki(LINE_CONTENT, CURRENT_COL, 'wiki')
   if LINK_WIKI then
-    local LINK_TEXT_WIKI = LINK_WIKI.CONTENT:match(REGEX_WIKI)
+    local LINK_TEXT_WIKI = LINK_WIKI.CONTENT:match(M.REGEX_WIKI)
     return { text = LINK_TEXT_WIKI, url = LINK_TEXT_WIKI, isMdWiki = true, COL = LINK_MD.COL }
   end
   return false
