@@ -10,7 +10,10 @@ local DEFAULT_CONFIGS = {
       ['<CR>'] = { 'cmd', 'create link or open link' },
       ['<leader><CR>'] = { 'cmd', 'undo link' },
     }
-  }
+  },
+  on_attach = function ()
+    return true
+  end
 }
 
 return DEFAULT_CONFIGS
