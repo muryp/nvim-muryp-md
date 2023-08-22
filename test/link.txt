@@ -10,7 +10,8 @@ hello [[th(is) link]](./link) ) [this link2](./link2) [[link3]]end
 hello [[thlink]]end
 
 transform :
-link-this
+text1[link1](link1)text2[link2](link2)text3[link3](link3)
+text1[text link1](link1)text2[text link2](link2)text3[text link3](link3)
 [link]
 
 visual :
